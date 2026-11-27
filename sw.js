@@ -1,4 +1,4 @@
-const CACHE_NAME = "nuestro-momento-v1";
+const CACHE_NAME = "nuestro-momento-v2";
 const URLS_TO_CACHE = [
   "/regalo-aniversario/regalo_aniversario.html",
   "/regalo-aniversario/manifest.json",
