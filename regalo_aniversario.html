@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#361017" />
+  <title>Para Sheila, con cariño. De David</title>
+
+  <!-- Tipografías editoriales y de lectura -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Leaflet CSS para el mapa interactivo -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            crema: {
+              claro: '#FBF7F2',
+              base: '#F5EFE6',
+            },
+            beige: {
+              suave: '#EADFD0',
+              arena: '#DFD0BE',
+            },
+            rosa: {
+              apagado: '#C89D9C',
+              polvo: '#B38282',
+              rubor: '#E5CFCB',
+            },
+            burdeos: {
+              profundo: '#4E1B24',
+              oscuro: '#361017',
+              vino: '#682632',
+            },
+          },
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          boxShadow: {
+            editorial: '0 18px 45px -18px rgba(54, 16, 23, 0.18)',
+            suave: '0 10px 28px -12px rgba(54, 16, 23, 0.12)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #FBF7F2;
+      color: #361017;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .font-editorial {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    .papel-editorial {
+      background-image: radial-gradient(rgba(78, 27, 36, 0.04) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
+    /* Pantalla de entrada */
+    #entry-screen {
+      transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s ease;
+    }
+
+    #entry-screen.is-leaving {
+      opacity: 0;
+      transform: translateY(-12px);
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Transición suave entre pantallas */
+    .screen-panel {
+      animation: screenFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes screenFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Deslizador de volumen */
+    input[type="range"].volumen-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(251, 247, 242, 0.28);
+      outline: none;
+    }
+
+    input[type="range"].volumen-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #E5CFCB;
+      cursor: pointer;
+      border: 1.5px solid #361017;
+    }
+
+    input[type="range"].volumen-slider::-moz-range-thumb {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #E5CFCB;
+      cursor: pointer;
+      border: 1.5px solid #361017;
+    }
+
+    /* Imágenes ampliables */
+    .foto-ampliable {
+      cursor: zoom-in;
+    }
+
+    .foto-ampliable img {
+      transition: transform 0.45s ease;
+    }
+
+    .foto-ampliable:hover img {
+      transform: scale(1.025);
+    }
+
+    #mapa-leaflet-canvas {
+      height: 360px;
+      width: 100%;
+      z-index: 1;
+    }
+
+    @media (min-width: 640px) {
+      #mapa-leaflet-canvas {
+        height: 420px;
+      }
+    }
+  </style>
+</head>
+<body class="papel-editorial selection:bg-rosa-apagado/35 selection:text-burdeos-oscuro flex flex-col min-h-screen">
+
+  <!-- =========================================================
+       1. PANTALLA DE ENTRADA («Tres años juntos» / «Tengo algo para ti»)
+       ========================================================= -->
+  <section
+    id="entry-screen"
+    aria-label="Pantalla de entrada"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-burdeos-profundo text-crema-claro px-5 py-8"
+  >
+    <div class="w-full max-w-2xl rounded-3xl border border-rosa-apagado/30 bg-burdeos-oscuro/90 px-6 py-12 sm:px-12 sm:py-16 text-center shadow-2xl">
+      <p class="text-xs uppercase tracking-[0.28em] text-rosa-rubor/85 mb-4">
+        28 de noviembre de 2023 · Aniversario
+      </p>
+
+      <h1 class="font-editorial text-5xl sm:text-7xl font-medium tracking-tight text-crema-claro leading-[1.05] mb-4">
+        Tres años juntos
+      </h1>
+
+      <p class="font-editorial italic text-2xl sm:text-3xl text-rosa-rubor mb-9">
+        Tengo algo para ti
+      </p>
+
+      <div class="flex flex-col items-center gap-3">
+        <button
+          id="btn-entrar-experiencia"
+          type="button"
+          class="group inline-flex items-center justify-center gap-3 rounded-full bg-crema-claro text-burdeos-oscuro px-8 py-4 text-sm sm:text-base font-medium tracking-wide shadow-lg hover:bg-beige-suave active:scale-[0.99] transition cursor-pointer"
+        >
+          <span>Tengo algo para ti</span>
+          <span aria-hidden="true" class="text-burdeos-profundo transition-transform group-hover:translate-x-1">→</span>
+        </button>
+
+        <p class="text-xs text-crema-claro/70 max-w-md leading-relaxed mt-2">
+          Al pulsar se iniciará el reproductor de música y podrás recorrer cada pantalla de este regalo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       2. NAVEGACIÓN MULTIPANTALLA (Escritorio + Menú compacto móvil)
+       ========================================================= -->
+  <header class="sticky top-0 z-30 border-b border-burdeos-profundo/12 bg-crema-claro/95 backdrop-blur-md">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <button
+        type="button"
+        data-nav-screen="inicio"
+        class="text-left font-editorial text-xl sm:text-2xl font-semibold tracking-tight text-burdeos-profundo hover:text-burdeos-vino transition cursor-pointer shrink-0"
+      >
+        Sheila &amp; David
+      </button>
+
+      <!-- Navegación compacta en escritorio con acceso a las 12 pantallas -->
+      <nav aria-label="Navegación principal" class="hidden xl:flex items-center gap-1.5 text-xs text-burdeos-profundo/85">
+        <button type="button" data-nav-screen="inicio" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Inicio</button>
+        <button type="button" data-nav-screen="contador" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Contador</button>
+        <button type="button" data-nav-screen="mapa" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Mapa</button>
+        <button type="button" data-nav-screen="cartas" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Cartas</button>
+        <button type="button" data-nav-screen="comics-marvel" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Cómics Marvel</button>
+        <button type="button" data-nav-screen="comics-dc" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Cómics DC</button>
+        <button type="button" data-nav-screen="peliculas-marvel" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Películas Marvel</button>
+        <button type="button" data-nav-screen="peliculas-dc" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Películas DC</button>
+        <button type="button" data-nav-screen="anime" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Anime</button>
+        <button type="button" data-nav-screen="mensajes" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Mensajes</button>
+        <button type="button" data-nav-screen="planes" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Planes</button>
+        <button type="button" data-nav-screen="final" class="nav-pill rounded-full px-3 py-1.5 transition cursor-pointer">Final</button>
+      </nav>
+
+      <!-- Selector rápido en tablet/escritorio medio + Botón menú móvil -->
+      <div class="flex items-center gap-2">
+        <label for="desktop-mid-nav" class="sr-only">Seleccionar pantalla</label>
+        <select
+          id="desktop-mid-nav"
+          aria-label="Seleccionar pantalla"
+          class="hidden sm:block xl:hidden rounded-full border border-burdeos-profundo/20 bg-crema-base px-3.5 py-1.5 text-xs font-medium text-burdeos-oscuro focus:outline-none cursor-pointer"
+        ></select>
+
+        <button
+          id="btn-mobile-menu"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobile-drawer"
+          aria-label="Abrir o cerrar menú de pantallas"
+          class="xl:hidden inline-flex items-center gap-2 rounded-full border border-burdeos-profundo/20 bg-crema-base hover:bg-beige-suave text-burdeos-oscuro px-3.5 py-2 text-xs font-medium transition cursor-pointer"
+        >
+          <span class="flex flex-col gap-1 w-4" aria-hidden="true">
+            <span class="block h-0.5 w-full bg-burdeos-oscuro rounded"></span>
+            <span class="block h-0.5 w-full bg-burdeos-oscuro rounded"></span>
+            <span class="block h-0.5 w-full bg-burdeos-oscuro rounded"></span>
+          </span>
+          <span>Pantallas</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Menú desplegable compacto en móvil/tablet -->
+    <div
+      id="mobile-drawer"
+      class="hidden xl:hidden border-t border-burdeos-profundo/10 bg-crema-claro px-4 py-4 shadow-lg"
+    >
+      <div id="mobile-nav-grid" class="mx-auto max-w-3xl grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       3. CONTENEDOR PRINCIPAL DE PANTALLAS (12 PANTALLAS + LECTURA DE CARTA)
+       ========================================================= -->
+  <main class="flex-1 pb-28">
+    <div id="screens-container" class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+
+      <!-- PANTALLA 1: INICIO -->
+      <section id="screen-inicio" data-screen="inicio" class="screen-panel space-y-10">
+        <div class="rounded-3xl border border-burdeos-profundo/12 bg-crema-base p-7 sm:p-12 shadow-editorial">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="lg:col-span-7 space-y-5">
+              <p class="text-xs uppercase tracking-[0.24em] text-rosa-polvo font-semibold">
+                Aniversario · 28 de noviembre de 2023
+              </p>
+
+              <h1 class="font-editorial text-4xl sm:text-6xl font-medium text-burdeos-profundo leading-[1.06]">
+                Para Sheila, con cariño. De David
+              </h1>
+
+              <p class="text-sm sm:text-base leading-relaxed text-burdeos-oscuro/90 max-w-2xl">
+                Un espacio pensado para abrir cuando te apetezca: leer cartas dedicadas a ti, mirar el tiempo que llevamos sumando, ver la distancia que nos separa y recorrer historias que nos gustan.
+              </p>
+
+              <div class="flex flex-wrap gap-3 pt-2">
+                <button
+                  type="button"
+                  data-nav-screen="cartas"
+                  class="rounded-full bg-burdeos-profundo hover:bg-burdeos-vino text-crema-claro px-6 py-3 text-xs sm:text-sm font-medium transition cursor-pointer"
+                >
+                  Ir a Cartas para Sheila →
+                </button>
+                <button
+                  type="button"
+                  data-nav-screen="contador"
+                  class="rounded-full border border-burdeos-profundo/25 bg-crema-claro hover:bg-beige-suave text-burdeos-oscuro px-5 py-3 text-xs sm:text-sm font-medium transition cursor-pointer"
+                >
+                  Ver contador desde el 28/11/2023
+                </button>
+              </div>
+            </div>
+
+            <!-- Tarjeta «Mensaje para hoy» -->
+            <div class="lg:col-span-5">
+              <div class="rounded-3xl border border-rosa-apagado/35 bg-burdeos-profundo text-crema-claro p-6 sm:p-8 shadow-editorial">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <span class="text-xs uppercase tracking-[0.22em] text-rosa-rubor font-semibold">
+                    Mensaje para hoy
+                  </span>
+                  <span id="mensaje-hoy-fecha" class="text-[11px] text-crema-claro/75"></span>
+                </div>
+                <p id="mensaje-hoy-texto" class="font-editorial italic text-2xl sm:text-3xl leading-snug text-crema-claro mb-4"></p>
+                <p class="text-xs text-crema-claro/75">
+                  Cambia automáticamente cada día y se mantiene igual durante toda la jornada.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accesos directos compactos a las áreas principales -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <button
+            type="button"
+            data-nav-screen="cartas"
+            class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro hover:bg-beige-suave/60 p-5 text-left transition cursor-pointer shadow-suave"
+          >
+            <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-polvo font-semibold block mb-1">04 · Cartas</span>
+            <p class="font-editorial text-2xl text-burdeos-profundo">Cartas para Sheila</p>
+            <p class="text-xs text-burdeos-oscuro/75 mt-1">Cinco cartas abiertas de forma individual.</p>
+          </button>
+
+          <button
+            type="button"
+            data-nav-screen="mapa"
+            class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro hover:bg-beige-suave/60 p-5 text-left transition cursor-pointer shadow-suave"
+          >
+            <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-polvo font-semibold block mb-1">03 · Mapa</span>
+            <p class="font-editorial text-2xl text-burdeos-profundo">Aunque haya kilómetros</p>
+            <p class="text-xs text-burdeos-oscuro/75 mt-1">Pinto y L&apos;Hospitalet de Llobregat (~504 km).</p>
+          </button>
+
+          <button
+            type="button"
+            data-nav-screen="comics-marvel"
+            class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro hover:bg-beige-suave/60 p-5 text-left transition cursor-pointer shadow-suave"
+          >
+            <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-polvo font-semibold block mb-1">05–08 · Cómics y Cine</span>
+            <p class="font-editorial text-2xl text-burdeos-profundo">Marvel y DC</p>
+            <p class="text-xs text-burdeos-oscuro/75 mt-1">Parejas en cómics y en películas.</p>
+          </button>
+
+          <button
+            type="button"
+            data-nav-screen="anime"
+            class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro hover:bg-beige-suave/60 p-5 text-left transition cursor-pointer shadow-suave"
+          >
+            <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-polvo font-semibold block mb-1">09 · Anime</span>
+            <p class="font-editorial text-2xl text-burdeos-profundo">Parejas de anime</p>
+            <p class="text-xs text-burdeos-oscuro/75 mt-1">Selección dedicada de nuestras series.</p>
+          </button>
+        </div>
+      </section>
+
+      <!-- PANTALLA 2: NUESTRO CONTADOR -->
+      <section id="screen-contador" data-screen="contador" class="screen-panel hidden space-y-8">
+        <div class="rounded-3xl border border-burdeos-profundo/15 bg-crema-base p-6 sm:p-12 shadow-editorial">
+          <div class="text-center max-w-2xl mx-auto mb-10">
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-polvo font-semibold mb-2">
+              Desde el 28 de noviembre de 2023 · Europe/Madrid
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-burdeos-profundo">
+              Nuestro contador
+            </h2>
+            <p class="text-sm text-burdeos-oscuro/80 mt-2">
+              Tiempo acumulado sin interrupciones ni reinicios desde nuestro aniversario original.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-5xl mx-auto text-center">
+            <div class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 shadow-suave">
+              <span id="cnt-years" class="font-editorial text-4xl sm:text-5xl font-semibold text-burdeos-profundo block">0</span>
+              <span class="text-xs uppercase tracking-widest text-burdeos-oscuro/75 mt-1 block">Años juntos</span>
+            </div>
+            <div class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 shadow-suave">
+              <span id="cnt-days-cycle" class="font-editorial text-4xl sm:text-5xl font-semibold text-burdeos-profundo block">0</span>
+              <span class="text-xs uppercase tracking-widest text-burdeos-oscuro/75 mt-1 block">Días transcurridos</span>
+            </div>
+            <div class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 shadow-suave">
+              <span id="cnt-hours" class="font-editorial text-4xl sm:text-5xl font-semibold text-burdeos-profundo block">00</span>
+              <span class="text-xs uppercase tracking-widest text-burdeos-oscuro/75 mt-1 block">Horas</span>
+            </div>
+            <div class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 shadow-suave">
+              <span id="cnt-minutes" class="font-editorial text-4xl sm:text-5xl font-semibold text-burdeos-profundo block">00</span>
+              <span class="text-xs uppercase tracking-widest text-burdeos-oscuro/75 mt-1 block">Minutos</span>
+            </div>
+            <div class="col-span-2 sm:col-span-1 rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 shadow-suave">
+              <span id="cnt-seconds" class="font-editorial text-4xl sm:text-5xl font-semibold text-burdeos-profundo block">00</span>
+              <span class="text-xs uppercase tracking-widest text-burdeos-oscuro/75 mt-1 block">Segundos</span>
+            </div>
+          </div>
+
+          <div class="mt-8 max-w-xl mx-auto rounded-2xl border border-rosa-apagado/35 bg-burdeos-profundo text-crema-claro px-6 py-4 text-center">
+            <p class="text-xs uppercase tracking-[0.22em] text-rosa-rubor mb-1">Total acumulado</p>
+            <p class="font-editorial text-2xl sm:text-3xl">
+              <span id="cnt-total-days" class="font-semibold">0</span> días en total desde que empezamos
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 3: NUESTRO MAPA («Aunque haya kilómetros») -->
+      <section id="screen-mapa" data-screen="mapa" class="screen-panel hidden space-y-8">
+        <div class="rounded-3xl border border-burdeos-profundo/12 bg-beige-suave/75 p-6 sm:p-10 shadow-editorial">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div class="lg:col-span-5 space-y-5">
+              <p class="text-xs uppercase tracking-[0.22em] text-rosa-polvo font-semibold">
+                Distancia en línea recta · ~504 km
+              </p>
+              <h2 class="font-editorial text-4xl sm:text-5xl font-medium text-burdeos-profundo leading-[1.08]">
+                Aunque haya kilómetros
+              </h2>
+              <p class="font-editorial italic text-2xl text-burdeos-vino leading-snug">
+                Estamos en ciudades distintas, pero seguimos encontrando la forma de estar cerca.
+              </p>
+
+              <div class="rounded-2xl border border-burdeos-profundo/12 bg-crema-claro p-5 space-y-3 text-xs sm:text-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <span class="font-semibold text-burdeos-oscuro">David · Pinto, Madrid</span>
+                  <span class="text-burdeos-oscuro/75 text-right">40.24147, -3.69999</span>
+                </div>
+                <div class="flex items-start justify-between gap-3 pt-2 border-t border-burdeos-profundo/10">
+                  <span class="font-semibold text-burdeos-vino">Sheila · L&apos;Hospitalet de Llobregat, Barcelona</span>
+                  <span class="text-burdeos-oscuro/75 text-right">41.3595118, 2.0996318</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 pt-2 border-t border-burdeos-profundo/10">
+                  <span class="text-burdeos-oscuro/80">Distancia aproximada en línea recta</span>
+                  <span class="font-semibold text-burdeos-profundo">~504 km</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-7 rounded-3xl overflow-hidden border border-burdeos-profundo/15 bg-crema-claro shadow-md">
+              <div id="mapa-leaflet-canvas" aria-label="Mapa interactivo entre Pinto y L'Hospitalet de Llobregat"></div>
+
+              <!-- Alternativa visual automática si fallan las teselas externas -->
+              <div id="mapa-fallback-visual" class="hidden p-5 sm:p-7 bg-crema-base">
+                <div class="flex items-center justify-between text-xs text-burdeos-oscuro/75 mb-3">
+                  <span>Vista esquemática de distancia</span>
+                  <span class="font-semibold text-burdeos-profundo">~504 km en línea recta</span>
+                </div>
+                <svg viewBox="0 0 680 390" class="w-full h-auto rounded-2xl border border-burdeos-profundo/15 bg-crema-claro" role="img" aria-label="Representación visual de los dos puntos y la línea entre ellos">
+                  <rect width="680" height="390" fill="#FBF7F2" />
+                  <path d="M 145 295 Q 350 215 535 95" fill="none" stroke="#4E1B24" stroke-width="3.5" stroke-dasharray="9 7" />
+                  <circle cx="145" cy="295" r="10" fill="#361017" stroke="#E5CFCB" stroke-width="3" />
+                  <circle cx="535" cy="95" r="10" fill="#682632" stroke="#E5CFCB" stroke-width="3" />
+                  <text x="145" y="330" text-anchor="middle" fill="#361017" font-size="14" font-weight="700">David · Pinto</text>
+                  <text x="145" y="348" text-anchor="middle" fill="#4E1B24" font-size="11">40.24147, -3.69999</text>
+                  <text x="535" y="62" text-anchor="middle" fill="#682632" font-size="14" font-weight="700">Sheila · L&apos;Hospitalet de Llobregat</text>
+                  <text x="535" y="78" text-anchor="middle" fill="#4E1B24" font-size="11">41.3595118, 2.0996318</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 4: CARTAS PARA SHEILA (Biblioteca de tarjetas) -->
+      <section id="screen-cartas" data-screen="cartas" class="screen-panel hidden space-y-8">
+        <div class="max-w-2xl">
+          <p class="text-xs uppercase tracking-[0.24em] text-rosa-polvo font-semibold mb-2">
+            Biblioteca de dedicatorias
+          </p>
+          <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-burdeos-profundo">
+            Cartas para Sheila
+          </h2>
+          <p class="text-sm sm:text-base text-burdeos-oscuro/80 mt-2">
+            Pulsa cualquiera de las tarjetas para abrir su pantalla individual y leerla con calma.
+          </p>
+        </div>
+
+        <div id="cartas-biblioteca-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </section>
+
+      <!-- PANTALLA INDIVIDUAL DE CARTA -->
+      <section id="screen-carta-detalle" data-screen="carta-detalle" class="screen-panel hidden space-y-6">
+        <div class="flex items-center justify-between gap-4">
+          <button
+            id="btn-volver-cartas"
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full border border-burdeos-profundo/25 bg-crema-claro hover:bg-beige-suave text-burdeos-oscuro px-4 py-2 text-xs sm:text-sm font-medium transition cursor-pointer"
+          >
+            <span aria-hidden="true">←</span>
+            <span>Volver a Cartas para Sheila</span>
+          </button>
+          <span id="carta-detalle-etiqueta" class="text-xs uppercase tracking-[0.2em] text-rosa-polvo font-semibold"></span>
+        </div>
+
+        <article id="carta-detalle-card" class="rounded-3xl border border-burdeos-profundo/15 bg-crema-base p-7 sm:p-12 shadow-editorial max-w-3xl mx-auto">
+          <p id="carta-detalle-subtitulo" class="text-xs uppercase tracking-[0.2em] text-rosa-polvo font-semibold mb-2"></p>
+          <h2 id="carta-detalle-titulo" class="font-editorial text-3xl sm:text-5xl font-medium text-burdeos-profundo mb-6 pb-4 border-b border-burdeos-profundo/12"></h2>
+          <div id="carta-detalle-cuerpo" class="space-y-5 text-base sm:text-lg leading-relaxed text-burdeos-oscuro"></div>
+
+          <!-- Bloque de traducción al español cuando la carta está en francés -->
+          <div id="carta-detalle-traduccion" class="hidden mt-8 pt-6 border-t border-burdeos-profundo/15 rounded-2xl bg-crema-claro/85 p-5 sm:p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-burdeos-vino font-semibold mb-3">
+              Traducción al español
+            </p>
+            <div id="carta-detalle-traduccion-cuerpo" class="space-y-3.5 text-sm sm:text-base leading-relaxed text-burdeos-oscuro/90"></div>
+          </div>
+        </article>
+      </section>
+
+      <!-- PANTALLA 5: CÓMICS MARVEL -->
+      <section id="screen-comics-marvel" data-screen="comics-marvel" class="screen-panel hidden">
+        <div class="rounded-3xl bg-burdeos-profundo text-crema-claro p-6 sm:p-10 shadow-editorial space-y-10">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-rubor/85 mb-2">
+              Revista de Cómics · Marvel
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro">
+              Parejas de Cómics Marvel
+            </h2>
+          </div>
+
+          <!-- Protagonismo: Gambit & Rogue -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-rosa-apagado/35 p-5 sm:p-7 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+              <div>
+                <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-rubor">Protagonismo principal</span>
+                <h3 class="font-editorial text-3xl sm:text-4xl text-crema-claro">Gambit &amp; Rogue</h3>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <figure data-lightbox-key="marvelGambitRogue1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelGambitRogue1" alt="Gambit y Rogue en cómic de Marvel" class="w-full h-64 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Cuando dos mundos distintos se atraen sin poder evitarlo.</figcaption>
+              </figure>
+              <figure data-lightbox-key="marvelGambitRogue2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelGambitRogue2" alt="Gambit y Rogue en X-Men Gold" class="w-full h-64 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Elegirse de verdad, por encima de cualquier obstáculo.</figcaption>
+              </figure>
+              <figure data-lightbox-key="marvelGambitRogue3" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelGambitRogue3" alt="Gambit y Rogue en Mr. and Mrs. X" class="w-full h-64 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Complicidad, chispa y ganas de caminar juntos.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Spider-Man & Mary Jane -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-5">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">Spider-Man &amp; Mary Jane</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <figure data-lightbox-key="marvelSpideyMj1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelSpideyMj1" alt="Spider-Man y Mary Jane en Amazing Spider-Man" class="w-full h-60 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Un refugio cálido cuando todo alrededor va deprisa.</figcaption>
+              </figure>
+              <figure data-lightbox-key="marvelSpideyMj2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelSpideyMj2" alt="Spider-Man y Mary Jane en cómic clásico" class="w-full h-60 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Mirarse y saber que no estás solo en nada.</figcaption>
+              </figure>
+              <figure data-lightbox-key="marvelSpideyMj3" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelSpideyMj3" alt="Spider-Man y Mary Jane juntos" class="w-full h-60 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Lo sencillo y verdadero que siempre vuelve a unir.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Miles Morales & Gwen Stacy -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-5">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">Miles Morales &amp; Gwen Stacy</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+              <figure data-lightbox-key="marvelMilesGwen1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10 max-w-md">
+                <img data-reg="marvelMilesGwen1" alt="Miles Morales y Gwen Stacy" class="w-full h-72 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Entenderse a la primera, incluso en distintos mundos.</figcaption>
+              </figure>
+              <div class="space-y-3 text-sm text-crema-claro/85 leading-relaxed">
+                <p class="font-editorial text-2xl text-crema-claro">Dos trayectorias cruzadas</p>
+                <p>
+                  Miles Morales y Gwen Stacy comparten el peso de una identidad heroica y un vínculo cercano construido entre dimensiones y decisiones compartidas.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jean & Cyclops -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-5">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">Jean &amp; Cyclops</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <figure data-lightbox-key="marvelJeanCyclops1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelJeanCyclops1" alt="Jean y Cyclops en cómic de Marvel" class="w-full h-64 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Una conexión profunda que atraviesa cada etapa.</figcaption>
+              </figure>
+              <figure data-lightbox-key="marvelJeanCyclops2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="marvelJeanCyclops2" alt="Jean y Cyclops juntos en cómic" class="w-full h-64 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Acompañarse con lealtad en cada paso del camino.</figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 6: CÓMICS DC -->
+      <section id="screen-comics-dc" data-screen="comics-dc" class="screen-panel hidden">
+        <div class="rounded-3xl bg-burdeos-oscuro text-crema-claro p-6 sm:p-10 shadow-editorial space-y-10">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-rubor/85 mb-2">
+              Revista de Cómics · DC Comics
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro">
+              Parejas de Cómics DC
+            </h2>
+          </div>
+
+          <!-- Espacio destacado: Batman & Catwoman -->
+          <div class="rounded-3xl bg-burdeos-profundo border border-rosa-apagado/35 p-5 sm:p-7 space-y-5">
+            <div>
+              <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-rubor">Espacio destacado</span>
+              <h3 class="font-editorial text-3xl sm:text-4xl text-crema-claro">Batman &amp; Catwoman</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <figure data-lightbox-key="dcBatmanCatwoman1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                <img data-reg="dcBatmanCatwoman1" alt="Batman y Catwoman en DC Comics" class="w-full h-72 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Reconocerse en silencio bajo el cielo de la noche.</figcaption>
+              </figure>
+              <figure data-lightbox-key="dcBatmanCatwoman2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                <img data-reg="dcBatmanCatwoman2" alt="Batman y Catwoman portada especial" class="w-full h-72 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Dos formas distintas de mirar la misma ciudad.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Mister Miracle & Big Barda + Superman & Lois Lane -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="rounded-3xl bg-burdeos-profundo border border-crema-claro/15 p-5 sm:p-7 space-y-4">
+              <h3 class="font-editorial text-2xl sm:text-3xl text-crema-claro">Mister Miracle &amp; Big Barda</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <figure data-lightbox-key="dcMiracleBarda1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                  <img data-reg="dcMiracleBarda1" alt="Mister Miracle y Big Barda" class="w-full h-56 object-cover" />
+                  <figcaption class="p-3 text-xs text-crema-claro/85">Fuerza, ternura y un hogar compartido.</figcaption>
+                </figure>
+                <figure data-lightbox-key="dcMiracleBarda2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                  <img data-reg="dcMiracleBarda2" alt="Mister Miracle y Big Barda en cómic" class="w-full h-56 object-cover" />
+                  <figcaption class="p-3 text-xs text-crema-claro/85">Acompañarse siempre pase lo que pase.</figcaption>
+                </figure>
+              </div>
+            </div>
+
+            <div class="rounded-3xl bg-burdeos-profundo border border-crema-claro/15 p-5 sm:p-7 space-y-4">
+              <h3 class="font-editorial text-2xl sm:text-3xl text-crema-claro">Superman &amp; Lois Lane</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <figure data-lightbox-key="dcSupermanLois1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                  <img data-reg="dcSupermanLois1" alt="Superman y Lois Lane en DC" class="w-full h-56 object-cover" />
+                  <figcaption class="p-3 text-xs text-crema-claro/85">Apoyo firme y palabras que dan calma.</figcaption>
+                </figure>
+                <figure data-lightbox-key="dcSupermanLois2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/10">
+                  <img data-reg="dcSupermanLois2" alt="Superman y Lois Lane juntos" class="w-full h-56 object-cover" />
+                  <figcaption class="p-3 text-xs text-crema-claro/85">Estar el uno para el otro cada día.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 7: PELÍCULAS MARVEL -->
+      <section id="screen-peliculas-marvel" data-screen="peliculas-marvel" class="screen-panel hidden">
+        <div class="rounded-3xl bg-burdeos-profundo text-crema-claro p-6 sm:p-10 shadow-editorial space-y-10">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-rubor/85 mb-2">
+              Cine · Marvel
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro">
+              Parejas en Películas Marvel
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <figure data-lightbox-key="cineMarvelPeterMj" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/15">
+              <img data-reg="cineMarvelPeterMj" alt="Peter Parker y MJ en película de Marvel" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Peter Parker &amp; MJ</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Guardar en la memoria lo que de verdad importa.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineMarvelWandaVision" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/15">
+              <img data-reg="cineMarvelWandaVision" alt="Wanda Maximoff y Vision en película de Marvel" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Wanda Maximoff &amp; Vision</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Un cariño sereno que permanece en cada instante.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineMarvelTonyPepper" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/15">
+              <img data-reg="cineMarvelTonyPepper" alt="Tony Stark y Pepper Potts" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Tony Stark &amp; Pepper Potts</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">El lugar donde siempre se vuelve con ganas.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineMarvelStevePeggy" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-oscuro border border-crema-claro/15">
+              <img data-reg="cineMarvelStevePeggy" alt="Steve Rogers y Peggy Carter" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Steve Rogers &amp; Peggy Carter</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Una promesa que no pierde sentido con el tiempo.</p>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 8: PELÍCULAS DC -->
+      <section id="screen-peliculas-dc" data-screen="peliculas-dc" class="screen-panel hidden">
+        <div class="rounded-3xl bg-burdeos-oscuro text-crema-claro p-6 sm:p-10 shadow-editorial space-y-10">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-rubor/85 mb-2">
+              Cine · DC
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro">
+              Parejas en Películas DC
+            </h2>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <figure data-lightbox-key="cineDcBatmanCatwoman" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-profundo border border-crema-claro/15">
+              <img data-reg="cineDcBatmanCatwoman" alt="Batman y Catwoman en The Batman" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Batman &amp; Catwoman · The Batman</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Cruces de miradas que dicen más que las palabras.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineDcWonderSteve" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-profundo border border-crema-claro/15">
+              <img data-reg="cineDcWonderSteve" alt="Wonder Woman y Steve Trevor" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Wonder Woman &amp; Steve Trevor</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Compartir un instante luminoso y volver a sonreír.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineDcSupermanLois" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-profundo border border-crema-claro/15">
+              <img data-reg="cineDcSupermanLois" alt="Superman y Lois Lane" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Superman &amp; Lois Lane</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Cercanía y confianza en cada paso.</p>
+              </figcaption>
+            </figure>
+
+            <figure data-lightbox-key="cineDcAquamanMera" class="foto-ampliable rounded-3xl overflow-hidden bg-burdeos-profundo border border-crema-claro/15">
+              <img data-reg="cineDcAquamanMera" alt="Aquaman y Mera" class="w-full h-64 object-cover" />
+              <figcaption class="p-5">
+                <h3 class="font-editorial text-2xl text-crema-claro">Aquaman &amp; Mera</h3>
+                <p class="text-xs text-crema-claro/80 mt-1">Avanzar juntos frente a cualquier marea.</p>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 9: PAREJAS DE ANIME (Franquicias estrictas indicadas) -->
+      <section id="screen-anime" data-screen="anime" class="screen-panel hidden">
+        <div class="rounded-3xl bg-burdeos-profundo text-crema-claro p-6 sm:p-10 shadow-editorial space-y-12">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-rubor/85 mb-2">
+              Selección de Anime
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro">
+              Parejas de anime
+            </h2>
+          </div>
+
+          <!-- Jujutsu Kaisen: Yuta Okkotsu y Rika -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-4">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">Jujutsu Kaisen</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <figure data-lightbox-key="animeJjkYutaRika" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeJjkYutaRika" alt="Yuta Okkotsu y Rika en Jujutsu Kaisen" class="w-full h-64 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Yuta Okkotsu y Rika</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Un lazo profundo que marca el corazón de su historia.</p>
+                </figcaption>
+              </figure>
+              <figure data-lightbox-key="animeJjkYutaMaki" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeJjkYutaMaki" alt="Yuta Okkotsu y Maki Zenin en Jujutsu Kaisen" class="w-full h-64 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Yuta Okkotsu y Maki Zenin</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Complicidad y confianza compartida en cada batalla.</p>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Kimetsu no Yaiba: Tanjiro y Kanao; Obanai y Mitsuri -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-5">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">Kimetsu no Yaiba</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <figure data-lightbox-key="animeKnyTanjiroKanao1" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeKnyTanjiroKanao1" alt="Tanjiro y Kanao en Kimetsu no Yaiba" class="w-full h-56 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Pequeños gestos amables que abren camino.</figcaption>
+              </figure>
+              <figure data-lightbox-key="animeKnyTanjiroKanao2" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeKnyTanjiroKanao2" alt="Tanjiro y Kanao juntos" class="w-full h-56 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Caminar lado a lado con paciencia y cariño.</figcaption>
+              </figure>
+              <figure data-lightbox-key="animeKnyObanaiMitsuri" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeKnyObanaiMitsuri" alt="Obanai y Mitsuri en Kimetsu no Yaiba" class="w-full h-56 object-cover" />
+                <figcaption class="p-3 text-xs text-crema-claro/85">Obanai y Mitsuri · Un afecto sincero que cuida y acompaña.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- JoJo's Bizarre Adventure: Jonathan y Erina; Jolyne y Anasui -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-5">
+            <h3 class="font-editorial text-2xl sm:text-4xl text-crema-claro">JoJo&apos;s Bizarre Adventure</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <figure data-lightbox-key="animeJojoJonathanErina" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeJojoJonathanErina" alt="Jonathan y Erina en JoJo's Bizarre Adventure" class="w-full h-60 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Jonathan y Erina</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Nobleza, lealtad y un recuerdo que perdura.</p>
+                </figcaption>
+              </figure>
+              <figure data-lightbox-key="animeJojoJolyneAnasui" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeJojoJolyneAnasui" alt="Jolyne y Anasui en JoJo's Bizarre Adventure" class="w-full h-60 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Jolyne y Anasui</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Estar presente sin dudarlo cuando más cuenta.</p>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Chainsaw Man: Denji y Reze (con especial protagonismo) -->
+          <div class="rounded-3xl bg-burdeos-oscuro border border-rosa-apagado/35 p-5 sm:p-7 space-y-5">
+            <div>
+              <span class="text-[11px] uppercase tracking-[0.2em] text-rosa-rubor">Especial protagonismo</span>
+              <h3 class="font-editorial text-3xl sm:text-4xl text-crema-claro">Chainsaw Man · Denji y Reze</h3>
+            </div>
+            <figure data-lightbox-key="animeCsmDenjiReze" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+              <img data-reg="animeCsmDenjiReze" alt="Denji y Reze en Chainsaw Man" class="w-full h-72 sm:h-80 object-cover" />
+              <figcaption class="p-4">
+                <p class="font-editorial text-2xl text-crema-claro">Denji y Reze</p>
+                <p class="text-xs text-crema-claro/80 mt-1">Momentos que se quedan grabados como una tarde de verano.</p>
+              </figcaption>
+            </figure>
+          </div>
+
+          <!-- Mob Psycho 100 y Baki -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-4">
+              <h3 class="font-editorial text-2xl sm:text-3xl text-crema-claro">Mob Psycho 100</h3>
+              <figure data-lightbox-key="animeMobTsubomi" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeMobTsubomi" alt="Mob y Tsubomi en Mob Psycho 100" class="w-full h-56 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Mob y Tsubomi</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Un cariño tranquilo que acompaña al crecer.</p>
+                </figcaption>
+              </figure>
+            </div>
+
+            <div class="rounded-3xl bg-burdeos-oscuro border border-crema-claro/15 p-5 sm:p-7 space-y-4">
+              <h3 class="font-editorial text-2xl sm:text-3xl text-crema-claro">Baki</h3>
+              <figure data-lightbox-key="animeBakiKozue" class="foto-ampliable rounded-2xl overflow-hidden bg-burdeos-profundo border border-crema-claro/10">
+                <img data-reg="animeBakiKozue" alt="Baki y Kozue en Baki" class="w-full h-56 object-cover" />
+                <figcaption class="p-4">
+                  <p class="font-editorial text-xl text-crema-claro">Baki y Kozue</p>
+                  <p class="text-xs text-crema-claro/80 mt-1">Cercanía y calma en medio de todo el ruido.</p>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 10: PEQUEÑOS MENSAJES -->
+      <section id="screen-mensajes" data-screen="mensajes" class="screen-panel hidden space-y-8">
+        <div class="max-w-2xl">
+          <p class="text-xs uppercase tracking-[0.24em] text-rosa-polvo font-semibold mb-2">
+            Detalles por descubrir
+          </p>
+          <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-burdeos-profundo">
+            Pequeños mensajes
+          </h2>
+          <p class="text-sm sm:text-base text-burdeos-oscuro/80 mt-2">
+            Pulsa cada tarjeta para revelar lo que hay escondido detrás.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="rounded-3xl border border-burdeos-profundo/12 bg-crema-base p-6 shadow-suave flex flex-col justify-between gap-4">
+            <button
+              type="button"
+              data-reveal-msg="msg-1"
+              aria-expanded="false"
+              class="w-full flex items-center justify-between gap-3 rounded-2xl bg-beige-suave hover:bg-beige-arena px-4 py-3.5 text-left transition cursor-pointer"
+            >
+              <span class="text-sm font-medium text-burdeos-oscuro">Detalle I</span>
+              <span class="text-xs uppercase tracking-wider font-semibold text-burdeos-profundo">Descubrir</span>
+            </button>
+            <div id="msg-1" class="hidden rounded-2xl border border-rosa-apagado/35 bg-crema-claro p-5 font-editorial italic text-2xl text-burdeos-profundo">
+              «Qué suerte que nuestras vidas se cruzaran».
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-burdeos-profundo/12 bg-crema-base p-6 shadow-suave flex flex-col justify-between gap-4">
+            <button
+              type="button"
+              data-reveal-msg="msg-2"
+              aria-expanded="false"
+              class="w-full flex items-center justify-between gap-3 rounded-2xl bg-beige-suave hover:bg-beige-arena px-4 py-3.5 text-left transition cursor-pointer"
+            >
+              <span class="text-sm font-medium text-burdeos-oscuro">Detalle II</span>
+              <span class="text-xs uppercase tracking-wider font-semibold text-burdeos-profundo">Descubrir</span>
+            </button>
+            <div id="msg-2" class="hidden rounded-2xl border border-rosa-apagado/35 bg-crema-claro p-5 font-editorial italic text-2xl text-burdeos-profundo">
+              «De todas las cosas que han pasado estos años, me alegra especialmente haberte encontrado».
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-burdeos-profundo/12 bg-crema-base p-6 shadow-suave flex flex-col justify-between gap-4">
+            <button
+              type="button"
+              data-reveal-msg="msg-3"
+              aria-expanded="false"
+              class="w-full flex items-center justify-between gap-3 rounded-2xl bg-beige-suave hover:bg-beige-arena px-4 py-3.5 text-left transition cursor-pointer"
+            >
+              <span class="text-sm font-medium text-burdeos-oscuro">Detalle III</span>
+              <span class="text-xs uppercase tracking-wider font-semibold text-burdeos-profundo">Descubrir</span>
+            </button>
+            <div id="msg-3" class="hidden rounded-2xl border border-rosa-apagado/35 bg-crema-claro p-5 font-editorial italic text-2xl text-burdeos-profundo">
+              «Y todavía nos quedan muchos momentos por compartir».
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANTALLA 11: NUESTROS PLANES -->
+      <section id="screen-planes" data-screen="planes" class="screen-panel hidden">
+        <div class="max-w-3xl mx-auto rounded-3xl border border-burdeos-profundo/15 bg-crema-base p-6 sm:p-10 shadow-editorial space-y-6">
+          <div>
+            <p class="text-xs uppercase tracking-[0.24em] text-rosa-polvo font-semibold mb-1">
+              Por hacer juntos
+            </p>
+            <h2 class="font-editorial text-4xl sm:text-5xl font-medium text-burdeos-profundo">
+              Nuestros planes
+            </h2>
+            <p class="text-xs sm:text-sm text-burdeos-oscuro/75 mt-2 leading-relaxed">
+              Los cambios se guardan en el almacenamiento local de este navegador. Ten en cuenta que el almacenamiento local no sincroniza automáticamente los cambios entre nuestros dos dispositivos.
+            </p>
+          </div>
+
+          <form id="form-plan" class="flex flex-col sm:flex-row gap-2.5">
+            <label for="input-plan" class="sr-only">Nuevo plan pendiente</label>
+            <input
+              id="input-plan"
+              type="text"
+              required
+              placeholder="Escribe un plan que queramos hacer juntos..."
+              class="flex-1 rounded-full border border-burdeos-profundo/20 bg-crema-claro px-4 py-2.5 text-sm text-burdeos-oscuro focus:outline-none focus:border-burdeos-profundo"
+            />
+            <button
+              type="submit"
+              class="rounded-full bg-burdeos-profundo hover:bg-burdeos-vino text-crema-claro px-6 py-2.5 text-xs sm:text-sm font-medium transition cursor-pointer shrink-0"
+            >
+              Añadir plan
+            </button>
+          </form>
+
+          <ul id="lista-planes" class="space-y-2.5"></ul>
+        </div>
+      </section>
+
+      <!-- PANTALLA 12: FINAL -->
+      <section id="screen-final" data-screen="final" class="screen-panel hidden">
+        <div class="max-w-4xl mx-auto rounded-3xl bg-burdeos-profundo text-crema-claro px-6 py-14 sm:px-14 sm:py-20 text-center shadow-editorial border border-rosa-apagado/25">
+          <p class="text-xs uppercase tracking-[0.26em] text-rosa-rubor/85 mb-4">
+            Para siempre · 28 de noviembre
+          </p>
+          <h2 class="font-editorial text-4xl sm:text-6xl font-medium text-crema-claro leading-tight mb-6">
+            A pesar de los kilómetros, siempre nosotros
+          </h2>
+          <p class="mx-auto max-w-2xl text-base sm:text-xl leading-relaxed text-crema-claro/95 mb-8">
+            Sheila, gracias por estos años. Todavía nos quedan muchas cosas por vivir y muchas cartas por escribir. Feliz aniversario. Te quiero
+          </p>
+          <p class="font-editorial italic text-3xl sm:text-4xl text-rosa-rubor">
+            David.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- =========================================================
+       4. REPRODUCTOR PERSISTENTE FUERA DE LAS PANTALLAS OCULTAS
+       ========================================================= -->
+  <aside
+    id="music-player-bar"
+    aria-label="Reproductor de música de aniversario"
+    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-xl rounded-full border border-rosa-apagado/35 bg-burdeos-oscuro/95 text-crema-claro px-3.5 py-2 shadow-editorial backdrop-blur-md"
+  >
+    <div class="flex items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span
+          id="music-status-dot"
+          class="h-2.5 w-2.5 shrink-0 rounded-full bg-rosa-apagado/60 transition-colors"
+          aria-hidden="true"
+        ></span>
+        <div class="truncate">
+          <p class="text-xs font-medium text-crema-claro truncate">
+            assets/cancion-aniversario.mp3
+          </p>
+          <p id="music-status-text" class="text-[11px] text-rosa-rubor/85 truncate">
+            Listo para reproducir
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button
+          id="btn-music-play-pause"
+          type="button"
+          aria-label="Reproducir o pausar música"
+          class="inline-flex items-center gap-1.5 rounded-full bg-crema-claro/15 hover:bg-crema-claro/25 text-crema-claro px-3 py-1.5 text-xs font-medium transition cursor-pointer"
+        >
+          <span id="icon-music-play-pause" aria-hidden="true">▶</span>
+          <span id="label-music-play-pause" class="hidden sm:inline">Reproducir</span>
+        </button>
+
+        <label class="hidden md:flex items-center gap-1.5 px-1" title="Volumen">
+          <span class="sr-only">Volumen</span>
+          <input
+            id="music-volume-slider"
+            type="range"
+            min="0"
+            max="100"
+            value="65"
+            class="volumen-slider w-20"
+          />
+        </label>
+
+        <button
+          id="btn-music-mute"
+          type="button"
+          aria-label="Silenciar o activar sonido"
+          aria-pressed="false"
+          class="inline-flex items-center justify-center rounded-full bg-rosa-apagado/25 hover:bg-rosa-apagado/40 text-crema-claro w-9 h-9 transition cursor-pointer"
+        >
+          <svg id="svg-speaker-on" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+          <svg id="svg-speaker-off" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- =========================================================
+       MODAL LIGHTBOX PARA AMPLIAR IMÁGENES
+       ========================================================= -->
+  <div
+    id="lightbox-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Imagen ampliada"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-burdeos-oscuro/90 p-4 backdrop-blur-sm"
+  >
+    <div class="w-full max-w-4xl rounded-3xl bg-crema-claro text-burdeos-oscuro overflow-hidden shadow-2xl border border-rosa-apagado/30">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-burdeos-profundo/10 bg-crema-base">
+        <p id="lightbox-caption" class="text-xs sm:text-sm font-medium text-burdeos-oscuro truncate pr-4"></p>
+        <button
+          id="btn-close-lightbox"
+          type="button"
+          class="rounded-full bg-burdeos-profundo text-crema-claro px-3.5 py-1.5 text-xs font-medium hover:bg-burdeos-vino transition cursor-pointer shrink-0"
+        >
+          Cerrar ✕
+        </button>
+      </div>
+      <div class="bg-burdeos-oscuro flex items-center justify-center p-3 max-h-[78vh]">
+        <img id="lightbox-img" src="" alt="" class="max-h-[72vh] w-auto max-w-full rounded-xl object-contain" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- =========================================================
+       LÓGICA COMPLETA DE LA APLICACIÓN
+       ========================================================= -->
+  <script>
+    /* ---------------------------------------------------------
+       1. REGISTRO CENTRALIZADO DE IMÁGENES
+       --------------------------------------------------------- */
+    const IMAGE_REGISTRY = {
+      // Cómics Marvel
+      marvelGambitRogue1: {
+        src: 'https://cdn.marvel.com/u/prod/marvel/i/mg/a/90/57f7fe606e79c/clean.jpg',
+        caption: 'Gambit & Rogue · Cómics Marvel'
+      },
+      marvelGambitRogue2: {
+        src: 'https://cdn.marvel.com/content/1x/rogue_marriage_x-men_gold_2017_30_art_by_david_marquez_and_matthew_wilson.jpg',
+        caption: 'Gambit & Rogue · X-Men Gold #30'
+      },
+      marvelGambitRogue3: {
+        src: 'https://bleedingcool.com/wp-content/uploads/2018/07/MrAndMrsX_1-900x900.jpg',
+        caption: 'Gambit & Rogue · Mr. and Mrs. X #1'
+      },
+      marvelSpideyMj1: {
+        src: 'https://cdn.marvel.com/content/2x/asm2022021_cov.webp',
+        caption: 'Spider-Man & Mary Jane · Amazing Spider-Man'
+      },
+      marvelSpideyMj2: {
+        src: 'https://cdn.marvel.com/u/prod/marvel/i/mg/4/00/54c944c36d549/clean.jpg',
+        caption: 'Spider-Man & Mary Jane · Cómics Marvel'
+      },
+      marvelSpideyMj3: {
+        src: 'https://media.mycomicshop.com/n_iv/600/614865.jpg',
+        caption: 'Spider-Man & Mary Jane'
+      },
+      marvelMilesGwen1: {
+        src: 'https://ovicio.com.br/wp-content/uploads/2022/12/20221203-fjfarxdwiaesobl-555x555.jpg',
+        caption: 'Miles Morales & Gwen Stacy'
+      },
+      marvelJeanCyclops1: {
+        src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSI6zDrs-hxbGkpVFbIX9IlB9Xa_jsnS4JgLvq4VySRjA&s=10',
+        caption: 'Jean & Cyclops · Cómics Marvel'
+      },
+      marvelJeanCyclops2: {
+        src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS49KpjBD-iT-CMLMHJnkihzxtFWX8VKb-8XmJu0FcdYA&s=10',
+        caption: 'Jean & Cyclops · Cómics Marvel'
+      },
+
+      // Cómics DC
+      dcBatmanCatwoman1: {
+        src: 'https://static.dc.com/sites/default/files/imce/2019/04-APR/BM_24_5cb643902b9499.18054070.jpg',
+        caption: 'Batman & Catwoman · DC Comics'
+      },
+      dcBatmanCatwoman2: {
+        src: 'https://static.dc.com/dc/files/default_images/BM_CTW_Cv11_01111_DIGITAL_623e288db13a16.21580540.jpg',
+        caption: 'Batman & Catwoman · Portada DC'
+      },
+      dcMiracleBarda1: {
+        src: 'https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/4HNMBSUSNBEJ3KHRTY26WCHKDQ.jpg',
+        caption: 'Mister Miracle & Big Barda · DC Comics'
+      },
+      dcMiracleBarda2: {
+        src: 'https://static.dc.com/dc/files/default_images/MMIR_08_300-001_HD_5b858d37b33564.53243644.jpg?w=640',
+        caption: 'Mister Miracle & Big Barda #8'
+      },
+      dcSupermanLois1: {
+        src: 'https://static.dc.com/dc/files/default_images/dccp_sm_loisclrk_5b57c701612c76.03497348.jpg?w=640',
+        caption: 'Superman & Lois Lane · DC Comics'
+      },
+      dcSupermanLois2: {
+        src: 'https://i.blogs.es/a0f72b/superman-1/500_333.webp',
+        caption: 'Superman & Lois Lane'
+      },
+
+      // Películas Marvel
+      cineMarvelPeterMj: {
+        src: 'https://comicbook.com/wp-content/uploads/sites/4/2025/03/spider-man-no-way-home-peter-mj-best-mcu-romantic-moments.jpg?w=1024',
+        caption: 'Peter Parker & MJ · Películas Marvel'
+      },
+      cineMarvelWandaVision: {
+        src: 'https://i0.wp.com/almostginger.com/wp-content/uploads/2021/01/Avengers-Infinity-War.jpg?fit=1500%2C1000&ssl=1',
+        caption: 'Wanda Maximoff & Vision · Películas Marvel'
+      },
+      cineMarvelTonyPepper: {
+        src: 'https://wallpapercat.com/w/full/d/f/b/488950-2000x1334-desktop-hd-pepper-potts-background.jpg',
+        caption: 'Tony Stark & Pepper Potts · Películas Marvel'
+      },
+      cineMarvelStevePeggy: {
+        src: 'https://i.pinimg.com/originals/97/16/27/971627fa7739b2c32bb0376b5c579a15.jpg',
+        caption: 'Steve Rogers & Peggy Carter · Películas Marvel'
+      },
+
+      // Películas DC
+      cineDcBatmanCatwoman: {
+        src: 'https://www.etonline.com/sites/default/files/styles/720x720/public/images/2022-03/rev-1-TBM-59313r_High_Res_JPEG%20%281%29.jpg?h=c673cd1c',
+        caption: 'Batman & Catwoman · The Batman'
+      },
+      cineDcWonderSteve: {
+        src: 'https://www.silverpetticoatreview.com/wp-content/uploads/2017/09/Wonder-Woman-Dance.jpg',
+        caption: 'Wonder Woman & Steve Trevor · Películas DC'
+      },
+      cineDcSupermanLois: {
+        src: 'https://www.cinemascomics.com/wp-content/uploads/2025/04/historia-de-amor-en-la-pelicula-Superman-2025.jpg',
+        caption: 'Superman & Lois Lane · Películas DC'
+      },
+      cineDcAquamanMera: {
+        src: 'https://www.artofvfx.com/Aquaman/Aquaman_KelvinMcIlwain_ITW_02.jpg',
+        caption: 'Aquaman & Mera · Películas DC'
+      },
+
+      // Parejas de anime (franquicias solicitadas)
+      animeJjkYutaRika: {
+        src: 'https://tc-animate.techorus-cdn.com/resize_image/resize_image.php?age_limit=&height=&image=05101732_627a2319cdfa8.jpg&image_display_restriction=0&sex_characteristic=&warning_restriction=0&width=',
+        caption: 'Jujutsu Kaisen · Yuta Okkotsu y Rika'
+      },
+      animeJjkYutaMaki: {
+        src: 'https://i.redd.it/5q3ltxjndvwf1.jpeg',
+        caption: 'Jujutsu Kaisen · Yuta Okkotsu y Maki Zenin'
+      },
+      animeKnyTanjiroKanao1: {
+        src: 'https://wallpapers.com/images/hd/tanjiro-pictures-5drcqc2p244eo250.jpg',
+        caption: 'Kimetsu no Yaiba · Tanjiro y Kanao'
+      },
+      animeKnyTanjiroKanao2: {
+        src: 'https://i.ebayimg.com/images/g/SWUAAOSwbntlYJUh/s-l1600.png',
+        caption: 'Kimetsu no Yaiba · Tanjiro y Kanao'
+      },
+      animeKnyObanaiMitsuri: {
+        src: 'https://static.wikia.nocookie.net/shipping/images/0/0a/Obamitsu_arte_por_kmtdayo.jpg/revision/latest?cb=20211027044931&path-prefix=es',
+        caption: 'Kimetsu no Yaiba · Obanai y Mitsuri'
+      },
+      animeJojoJonathanErina: {
+        src: "https://pbs.twimg.com/media/ESOVd52XUAEU2aD.jpg",
+        caption: "JoJo's Bizarre Adventure · Jonathan y Erina"
+      },
+      animeJojoJolyneAnasui: {
+        src: "https://pbs.twimg.com/media/Flj8TY4XEAQGGbs.jpg",
+        caption: "JoJo's Bizarre Adventure · Jolyne y Anasui"
+      },
+      animeCsmDenjiReze: {
+        src: 'https://www.excelsior.com.mx/media/inside-the-note/pictures/2024/12/23/filters_quality95formatwebp_1.webp',
+        caption: 'Chainsaw Man · Denji y Reze'
+      },
+      animeMobTsubomi: {
+        src: 'https://gdm-universal-media.b-cdn.net/epicstream/fe060eecf93b97c29bcf3220d387849ecfca27af-1280x720.jpg',
+        caption: 'Mob Psycho 100 · Mob y Tsubomi'
+      },
+      animeBakiKozue: {
+        src: 'https://kk-promote-template.v3mh.com/answer-admin/prod/image/230311/J0ZoFkBs3.png',
+        caption: 'Baki · Baki y Kozue'
+      }
+    };
+
+    function hydrateImages() {
+      document.querySelectorAll('img[data-reg]').forEach((img) => {
+        const key = img.getAttribute('data-reg');
+        const item = IMAGE_REGISTRY[key];
+        if (!item) return;
+        img.loading = 'lazy';
+        img.src = item.src;
+        img.addEventListener('error', () => {
+          const fig = img.closest('figure');
+          if (fig) {
+            fig.classList.add('opacity-80');
+          }
+        }, { once: true });
+      });
+    }
+
+    /* ---------------------------------------------------------
+       2. BIBLIOTECA DE CARTAS (Fácil de ampliar en futuros aniversarios)
+       --------------------------------------------------------- */
+    const CARTAS_BIBLIOTECA = [
+      {
+        id: 'carta-1',
+        numero: 'Carta 1',
+        idiomaEtiqueta: 'Español',
+        titulo: 'Carta 1. Para ti, Sheila',
+        subtitulo: '28 de noviembre · Tres años',
+        parrafos: [
+          'Sheila:',
+          'Me hacía ilusión preparar algo especial para este 28 de noviembre. Tres años ya. A veces me cuesta encontrar las palabras para explicarte lo mucho que significas para mí, así que he querido preparar este pequeño rincón para ti.',
+          'Quería que tuvieras algo que pudieras abrir cuando te apeteciera y que te recordara que hay alguien al otro lado que te quiere muchísimo.',
+          'Gracias por seguir formando parte de mi vida. Feliz aniversario.',
+          'Te quiero.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-2',
+        numero: 'Carta 2',
+        idiomaEtiqueta: 'Español',
+        titulo: 'Carta 2. Cuando la distancia se haga larga',
+        subtitulo: 'Kilómetros que no cambian nada',
+        parrafos: [
+          'Ojalá a veces pudiéramos saltarnos los kilómetros y estar juntos sin tener que pensar en viajes ni horarios.',
+          'Hay días en los que se nota más que estamos lejos, pero quería recordarte que la distancia no cambia lo que siento por ti. Tengo muchas ganas de verte y de seguir compartiendo tiempo contigo.',
+          'Te echo de menos, Sheila.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-3',
+        numero: 'Carta 3',
+        idiomaEtiqueta: 'Español',
+        titulo: 'Carta 3. Para un día complicado',
+        subtitulo: 'Sin exigencias, a tu ritmo',
+        parrafos: [
+          'Si has abierto esta carta en un día complicado, quiero que recuerdes que no tienes que poder con todo a la vez.',
+          'Descansa un poco, ve a tu ritmo y no te exijas estar bien todo el tiempo. Aunque no pueda estar físicamente a tu lado, quiero que sepas que puedes contar conmigo.',
+          'Te quiero mucho.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-4',
+        numero: 'Carta 4',
+        idiomaEtiqueta: 'Español',
+        titulo: 'Carta 4. Porque sí',
+        subtitulo: 'Sin motivo concreto',
+        parrafos: [
+          'Esta carta no tiene una fecha especial ni un motivo concreto.',
+          'Simplemente quería recordarte que me gusta tenerte en mi vida. Me hace ilusión pensar en los planes que nos quedan y en todos los momentos que todavía podemos compartir.',
+          'A veces no hace falta que pase nada especial para decirte que eres alguien muy importante para mí.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-5',
+        numero: 'Carta 5',
+        idiomaEtiqueta: 'Español',
+        titulo: 'Carta 5. Para nuestro futuro',
+        subtitulo: 'Lo que todavía está por llegar',
+        parrafos: [
+          'Todavía nos quedan muchas cosas por hacer. Sitios que conocer, planes que organizar y días que compartir.',
+          'No sé exactamente cómo será todo dentro de unos años, pero me gusta pensar que seguiremos encontrando motivos para celebrar lo nuestro.',
+          'Esta página también podrá guardar nuevas cartas cuando lleguen otros aniversarios.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-6',
+        numero: 'Carta 6',
+        idiomaEtiqueta: 'Français · con traducción',
+        titulo: 'Carta 6. Mon petit coin tranquille',
+        subtitulo: 'Mi pequeño rincón tranquilo · En francés para ti',
+        parrafos: [
+          'Chérie :',
+          'J’ai voulu te laisser ces quelques mots en français pour que tu aies toujours un petit endroit doux où te poser quand tu en as envie.',
+          'Merci d’être là et de faire partie de ma vie. Je t’aime beaucoup.',
+          'David.'
+        ],
+        traduccion: [
+          'Chérie (cariño / mi vida):',
+          'He querido dejarte estas palabras en francés para que siempre tengas un pequeño lugar tranquilo donde detenerte cuando te apetezca.',
+          'Gracias por estar ahí y por formar parte de mi vida. Te quiero mucho.',
+          'David.'
+        ]
+      },
+      {
+        id: 'carta-7',
+        numero: 'Carta 7',
+        idiomaEtiqueta: 'Français · con traducción',
+        titulo: 'Carta 7. À travers les kilomètres',
+        subtitulo: 'A través de los kilómetros · En francés para ti',
+        parrafos: [
+          'Chérie :',
+          'Même quand la distance se fait sentir, tu restes très proche de moi dans mes pensées de tous les jours.',
+          'J’ai hâte qu’on se retrouve et qu’on continue d’écrire notre histoire ensemble.',
+          'David.'
+        ],
+        traduccion: [
+          'Chérie (cariño / mi vida):',
+          'Incluso cuando se nota la distancia, sigues muy cerca de mí en mis pensamientos de cada día.',
+          'Tengo ganas de que nos veamos y de que sigamos escribiendo nuestra historia juntos.',
+          'David.'
+        ]
+      }
+    ];
+
+    function renderCartasBiblioteca() {
+      const grid = document.getElementById('cartas-biblioteca-grid');
+      if (!grid) return;
+
+      grid.innerHTML = CARTAS_BIBLIOTECA.map((carta) => `
+        <button
+          type="button"
+          onclick="openCartaScreen('${carta.id}')"
+          class="group rounded-3xl border border-burdeos-profundo/15 bg-crema-base hover:bg-beige-suave/70 p-6 sm:p-7 text-left shadow-suave hover:shadow-editorial transition flex flex-col justify-between cursor-pointer"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span class="text-xs uppercase tracking-[0.2em] text-rosa-polvo font-semibold">
+                ${carta.numero}
+              </span>
+              <span class="rounded-full bg-crema-claro border border-burdeos-profundo/15 px-2.5 py-0.5 text-[11px] font-medium text-burdeos-profundo">
+                ${carta.idiomaEtiqueta}
+              </span>
+            </div>
+            <h3 class="font-editorial text-2xl sm:text-3xl text-burdeos-profundo group-hover:text-burdeos-vino transition mb-2">
+              ${carta.titulo}
+            </h3>
+            <p class="text-xs text-burdeos-oscuro/75">
+              ${carta.subtitulo}
+            </p>
+          </div>
+          <span class="mt-6 inline-flex items-center gap-1.5 text-xs font-semibold text-burdeos-profundo">
+            <span>Leer carta</span>
+            <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+          </span>
+        </button>
+      `).join('');
+    }
+
+    function rellenarVistaCarta(carta) {
+      document.getElementById('carta-detalle-etiqueta').textContent = `${carta.numero} · ${carta.idiomaEtiqueta}`;
+      document.getElementById('carta-detalle-subtitulo').textContent = carta.subtitulo;
+      document.getElementById('carta-detalle-titulo').textContent = carta.titulo;
+      document.getElementById('carta-detalle-cuerpo').innerHTML = carta.parrafos
+        .map((p) => `<p>${p}</p>`)
+        .join('');
+
+      const traduccionBox = document.getElementById('carta-detalle-traduccion');
+      const traduccionCuerpo = document.getElementById('carta-detalle-traduccion-cuerpo');
+      if (Array.isArray(carta.traduccion) && carta.traduccion.length > 0) {
+        traduccionCuerpo.innerHTML = carta.traduccion.map((p) => `<p>${p}</p>`).join('');
+        traduccionBox.classList.remove('hidden');
+      } else {
+        traduccionCuerpo.innerHTML = '';
+        traduccionBox.classList.add('hidden');
+      }
+    }
+
+    function openCartaScreen(cartaId) {
+      const carta = CARTAS_BIBLIOTECA.find((c) => c.id === cartaId);
+      if (!carta) return;
+
+      rellenarVistaCarta(carta);
+      navigateTo('carta-detalle', { cartaId });
+    }
+
+    document.getElementById('btn-volver-cartas').addEventListener('click', () => {
+      navigateTo('cartas');
+    });
+
+    /* ---------------------------------------------------------
+       3. MENSAJE PARA HOY (Cambia cada día, estable todo el día)
+       --------------------------------------------------------- */
+    const MENSAJES_DIARIOS = [
+      'Hoy también me alegra saber que estás ahí, Sheila.',
+      'No hace falta un motivo especial para pensar en ti y sonreír.',
+      'Ojalá este día te traiga calma y algún buen momento.',
+      'Seguimos sumando días desde aquel 28 de noviembre.',
+      'Me gusta mucho compartir este camino contigo.',
+      'Aunque estemos lejos, siempre tienes un lugar cerquita.',
+      'Hoy te elijo igual que el primer día, y un poco más.'
+    ];
+
+    function renderMensajeParaHoy() {
+      const formatter = new Intl.DateTimeFormat('es-ES', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const fechaParts = formatter.format(new Date()); // DD/MM/YYYY
+      const [dd, mm, yyyy] = fechaParts.split('/');
+      const seed = Number(`${yyyy}${mm}${dd}`);
+      const mensaje = MENSAJES_DIARIOS[seed % MENSAJES_DIARIOS.length];
+
+      const textoEl = document.getElementById('mensaje-hoy-texto');
+      const fechaEl = document.getElementById('mensaje-hoy-fecha');
+      if (textoEl) textoEl.textContent = `«${mensaje}»`;
+      if (fechaEl) fechaEl.textContent = fechaParts;
+    }
+
+    /* ---------------------------------------------------------
+       4. CONTADOR EN TIEMPO REAL (28/11/2023 · Europe/Madrid · Fijo)
+       --------------------------------------------------------- */
+    // 28 de noviembre de 2023 a las 00:00:00 hora peninsular española (CET = UTC+1 en noviembre)
+    const ANIVERSARIO_FIXED_MS = Date.parse('2023-11-28T00:00:00+01:00');
+
+    function updateContadorReal() {
+      const nowMs = Date.now();
+      const diffMs = Math.max(0, nowMs - ANIVERSARIO_FIXED_MS);
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const totalDays = Math.floor(diffMs / 86400000);
+
+      // Cálculo de años completos desde 28 de noviembre de 2023 en Europe/Madrid
+      const madridFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Europe/Madrid',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const [yNow, mNow, dNow] = madridFormatter.format(new Date()).split('-').map(Number);
+
+      let years = yNow - 2023;
+      if (mNow < 11 || (mNow === 11 && dNow < 28)) {
+        years -= 1;
+      }
+      years = Math.max(0, years);
+
+      // Fecha del último aniversario cumplido en Europe/Madrid
+      const lastAnnivYear = 2023 + years;
+      const lastAnnivMs = Date.parse(`${lastAnnivYear}-11-28T00:00:00+01:00`);
+      const sinceLastAnnivMs = Math.max(0, nowMs - lastAnnivMs);
+
+      const daysInCycle = Math.floor(sinceLastAnnivMs / 86400000);
+      const hours = Math.floor((sinceLastAnnivMs % 86400000) / 3600000);
+      const minutes = Math.floor((sinceLastAnnivMs % 3600000) / 60000);
+      const seconds = Math.floor((sinceLastAnnivMs % 60000) / 1000);
+
+      document.getElementById('cnt-years').textContent = String(years);
+      document.getElementById('cnt-days-cycle').textContent = String(daysInCycle);
+      document.getElementById('cnt-hours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('cnt-minutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('cnt-seconds').textContent = String(seconds).padStart(2, '0');
+      document.getElementById('cnt-total-days').textContent = String(totalDays);
+    }
+
+    /* ---------------------------------------------------------
+       5. MAPA INTERACTIVO («Aunque haya kilómetros»)
+       --------------------------------------------------------- */
+    let mapaInicializado = false;
+    let mapaInstance = null;
+
+    function initMapaDistancia() {
+      const mapEl = document.getElementById('mapa-leaflet-canvas');
+      const fallbackEl = document.getElementById('mapa-fallback-visual');
+      if (!mapEl || !fallbackEl) return;
+
+      const pintoCoords = [40.24147, -3.69999];
+      const hospitaletCoords = [41.3595118, 2.0996318];
+
+      if (typeof L === 'undefined') {
+        mapEl.classList.add('hidden');
+        fallbackEl.classList.remove('hidden');
+        return;
+      }
+
+      if (mapaInicializado && mapaInstance) {
+        setTimeout(() => mapaInstance.invalidateSize(), 120);
+        return;
+      }
+
+      try {
+        mapaInstance = L.map(mapEl, {
+          scrollWheelZoom: true
+        }).setView([40.82, -0.8], 6);
+
+        // Usamos servidores de mapa sin marca de agua "API KEY REQUIRED" (Esri World Street Map)
+        // y pasamos directamente a la alternativa visual si el servidor falla o bloquea la carga.
+        const esriUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+        let fallbackTriggered = false;
+
+        const activateVisualFallback = () => {
+          if (fallbackTriggered) return;
+          fallbackTriggered = true;
+          mapEl.classList.add('hidden');
+          fallbackEl.classList.remove('hidden');
+        };
+
+        const tileLayer = L.tileLayer(esriUrl, {
+          maxZoom: 18,
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ'
+        });
+
+        let tileErrorCount = 0;
+        tileLayer.on('tileerror', () => {
+          tileErrorCount += 1;
+          if (tileErrorCount >= 2) {
+            activateVisualFallback();
+          }
+        });
+
+        // Comprueba también si las imágenes de teselas cargaron vacías o bloqueadas tras unos segundos
+        setTimeout(() => {
+          const imgs = Array.from(mapEl.querySelectorAll('img.leaflet-tile'));
+          if (imgs.length === 0) {
+            activateVisualFallback();
+            return;
+          }
+          const brokenOrEmpty = imgs.filter((im) => !im.complete || im.naturalWidth === 0).length;
+          if (brokenOrEmpty >= Math.ceil(imgs.length / 2)) {
+            activateVisualFallback();
+          }
+        }, 2500);
+
+        tileLayer.addTo(mapaInstance);
+
+        const davidMarkerIcon = L.divIcon({
+          className: '',
+          html: `<div style="background:#361017;color:#FBF7F2;padding:4px 9px;border-radius:999px;border:2px solid #E5CFCB;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.25);transform:translateY(14px);">David · Pinto</div>`,
+          iconSize: [110, 28],
+          iconAnchor: [55, 14]
+        });
+
+        const sheilaMarkerIcon = L.divIcon({
+          className: '',
+          html: `<div style="background:#682632;color:#FBF7F2;padding:4px 9px;border-radius:999px;border:2px solid #E5CFCB;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.25);transform:translateY(-14px);">Sheila · L'Hospitalet</div>`,
+          iconSize: [148, 28],
+          iconAnchor: [74, 14]
+        });
+
+        L.marker(pintoCoords, { icon: davidMarkerIcon })
+          .addTo(mapaInstance)
+          .bindPopup('<strong>David</strong><br>Pinto, Madrid (40.24147, -3.69999)');
+
+        L.marker(hospitaletCoords, { icon: sheilaMarkerIcon })
+          .addTo(mapaInstance)
+          .bindPopup("<strong>Sheila</strong><br>L'Hospitalet de Llobregat, Barcelona (41.3595118, 2.0996318)");
+
+        const line = L.polyline([pintoCoords, hospitaletCoords], {
+          color: '#4E1B24',
+          weight: 3.5,
+          dashArray: '8, 8',
+          opacity: 0.9
+        }).addTo(mapaInstance);
+
+        mapaInstance.fitBounds(line.getBounds().pad(0.32));
+        mapaInicializado = true;
+      } catch (e) {
+        mapEl.classList.add('hidden');
+        fallbackEl.classList.remove('hidden');
+      }
+    }
+
+    /* ---------------------------------------------------------
+       6. NAVEGACIÓN MULTIPANTALLA (12 PANTALLAS + HISTORIAL)
+       --------------------------------------------------------- */
+    const SCREENS_META = [
+      { id: 'inicio', label: '1. Inicio' },
+      { id: 'contador', label: '2. Nuestro contador' },
+      { id: 'mapa', label: '3. Nuestro mapa' },
+      { id: 'cartas', label: '4. Cartas para Sheila' },
+      { id: 'comics-marvel', label: '5. Cómics Marvel' },
+      { id: 'comics-dc', label: '6. Cómics DC' },
+      { id: 'peliculas-marvel', label: '7. Películas Marvel' },
+      { id: 'peliculas-dc', label: '8. Películas DC' },
+      { id: 'anime', label: '9. Parejas de anime' },
+      { id: 'mensajes', label: '10. Pequeños mensajes' },
+      { id: 'planes', label: '11. Nuestros planes' },
+      { id: 'final', label: '12. Final' }
+    ];
+
+    let currentScreenId = 'inicio';
+
+    function applyScreenVisibility(screenId) {
+      const targetId = screenId === 'carta-detalle' ? 'screen-carta-detalle' : `screen-${screenId}`;
+      document.querySelectorAll('[data-screen]').forEach((sec) => {
+        if (sec.id === targetId) {
+          sec.classList.remove('hidden');
+        } else {
+          sec.classList.add('hidden');
+        }
+      });
+
+      currentScreenId = screenId;
+
+      document.querySelectorAll('.nav-pill').forEach((btn) => {
+        const isActive = btn.getAttribute('data-nav-screen') === screenId;
+        btn.classList.toggle('bg-burdeos-profundo', isActive);
+        btn.classList.toggle('text-crema-claro', isActive);
+        btn.classList.toggle('font-medium', isActive);
+      });
+
+      const midSelect = document.getElementById('desktop-mid-nav');
+      if (midSelect && screenId !== 'carta-detalle') {
+        midSelect.value = screenId;
+      }
+
+      if (screenId === 'mapa') {
+        initMapaDistancia();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateTo(screenId, extraState = {}, pushHist = true) {
+      applyScreenVisibility(screenId);
+      if (pushHist) {
+        try {
+          window.history.pushState({ screen: screenId, ...extraState }, '', `#${screenId}`);
+        } catch (err) {
+          // Ignorado si el entorno restringe pushState
+        }
+      }
+      closeMobileDrawer();
+    }
+
+    window.addEventListener('popstate', (event) => {
+      const state = event.state;
+      if (state && state.screen) {
+        if (state.screen === 'carta-detalle' && state.cartaId) {
+          const carta = CARTAS_BIBLIOTECA.find((c) => c.id === state.cartaId);
+          if (carta) {
+            rellenarVistaCarta(carta);
+          }
+        }
+        applyScreenVisibility(state.screen);
+      } else {
+        const hashScreen = window.location.hash.replace('#', '');
+        const valid = SCREENS_META.some((s) => s.id === hashScreen);
+        applyScreenVisibility(valid ? hashScreen : 'inicio');
+      }
+    });
+
+    function buildNavigationMenus() {
+      const mobileGrid = document.getElementById('mobile-nav-grid');
+      const midSelect = document.getElementById('desktop-mid-nav');
+
+      if (mobileGrid) {
+        mobileGrid.innerHTML = SCREENS_META.map((s) => `
+          <button
+            type="button"
+            data-nav-screen="${s.id}"
+            class="rounded-xl border border-burdeos-profundo/12 bg-crema-base hover:bg-beige-suave px-3 py-2 text-xs font-medium text-burdeos-oscuro text-left transition cursor-pointer"
+          >
+            ${s.label}
+          </button>
+        `).join('');
+      }
+
+      if (midSelect) {
+        midSelect.innerHTML = SCREENS_META.map((s) => `<option value="${s.id}">${s.label}</option>`).join('');
+        midSelect.addEventListener('change', (e) => {
+          navigateTo(e.target.value);
+        });
+      }
+
+      document.querySelectorAll('[data-nav-screen]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-nav-screen');
+          if (target) navigateTo(target);
+        });
+      });
+    }
+
+    const btnMobileMenu = document.getElementById('btn-mobile-menu');
+    const mobileDrawer = document.getElementById('mobile-drawer');
+
+    function closeMobileDrawer() {
+      if (!mobileDrawer) return;
+      mobileDrawer.classList.add('hidden');
+      if (btnMobileMenu) btnMobileMenu.setAttribute('aria-expanded', 'false');
+    }
+
+    btnMobileMenu.addEventListener('click', () => {
+      const isHidden = mobileDrawer.classList.contains('hidden');
+      mobileDrawer.classList.toggle('hidden', !isHidden);
+      btnMobileMenu.setAttribute('aria-expanded', String(isHidden));
+    });
+
+    /* ---------------------------------------------------------
+       7. PEQUEÑOS MENSAJES
+       --------------------------------------------------------- */
+    document.querySelectorAll('[data-reveal-msg]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-reveal-msg');
+        const panel = document.getElementById(targetId);
+        if (!panel) return;
+        const willShow = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !willShow);
+        btn.setAttribute('aria-expanded', String(willShow));
+        const actionSpan = btn.querySelector('span:last-child');
+        if (actionSpan) actionSpan.textContent = willShow ? 'Ocultar' : 'Descubrir';
+      });
+    });
+
+    /* ---------------------------------------------------------
+       8. NUESTROS PLANES (localStorage)
+       --------------------------------------------------------- */
+    const PLANES_STORAGE_KEY = 'sheila_david_planes_v1';
+    const PLANES_INICIALES = [
+      { id: 'p-1', texto: 'Fin de semana tranquilo juntos', completado: false },
+      { id: 'p-2', texto: 'Ir a ver una película y tomar algo después', completado: false }
+    ];
+
+    function leerPlanes() {
+      try {
+        const raw = localStorage.getItem(PLANES_STORAGE_KEY);
+        if (!raw) return PLANES_INICIALES.slice();
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : PLANES_INICIALES.slice();
+      } catch (e) {
+        return PLANES_INICIALES.slice();
+      }
+    }
+
+    function guardarPlanes(lista) {
+      try {
+        localStorage.setItem(PLANES_STORAGE_KEY, JSON.stringify(lista));
+      } catch (e) {
+        // Ignorado si el almacenamiento local no está disponible
+      }
+      renderPlanes();
+    }
+
+    function renderPlanes() {
+      const ul = document.getElementById('lista-planes');
+      if (!ul) return;
+      const planes = leerPlanes();
+
+      if (planes.length === 0) {
+        ul.innerHTML = `<li class="rounded-2xl border border-burdeos-profundo/10 bg-crema-claro p-4 text-xs sm:text-sm text-burdeos-oscuro/70 text-center">No hay planes añadidos todavía. Escribe el primero arriba.</li>`;
+        return;
+      }
+
+      ul.innerHTML = planes.map((p) => `
+        <li class="flex items-center justify-between gap-3 rounded-2xl border border-burdeos-profundo/12 bg-crema-claro px-4 py-3">
+          <label class="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
+            <input
+              type="checkbox"
+              ${p.completado ? 'checked' : ''}
+              onchange="togglePlanCompletado('${p.id}')"
+              class="h-4 w-4 accent-burdeos-profundo rounded cursor-pointer"
+            />
+            <span class="text-xs sm:text-sm text-burdeos-oscuro break-words ${p.completado ? 'line-through opacity-60' : ''}">${escapeHtml(p.texto)}</span>
+          </label>
+          <button
+            type="button"
+            onclick="eliminarPlan('${p.id}')"
+            aria-label="Eliminar plan"
+            class="rounded-full px-2.5 py-1 text-xs text-burdeos-profundo/70 hover:bg-beige-suave hover:text-burdeos-oscuro transition cursor-pointer shrink-0"
+          >
+            Eliminar
+          </button>
+        </li>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function togglePlanCompletado(id) {
+      const planes = leerPlanes().map((p) => (p.id === id ? { ...p, completado: !p.completado } : p));
+      guardarPlanes(planes);
+    }
+
+    function eliminarPlan(id) {
+      const planes = leerPlanes().filter((p) => p.id !== id);
+      guardarPlanes(planes);
+    }
+
+    document.getElementById('form-plan').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('input-plan');
+      const texto = input.value.trim();
+      if (!texto) return;
+      const planes = leerPlanes();
+      planes.unshift({
+        id: `plan-${Date.now()}`,
+        texto,
+        completado: false
+      });
+      guardarPlanes(planes);
+      input.value = '';
+    });
+
+    /* ---------------------------------------------------------
+       9. REPRODUCTOR PERSISTENTE (assets/cancion-aniversario.mp3 + fallback)
+       --------------------------------------------------------- */
+    const SESSION_MUTE_KEY = 'sheila_david_music_muted';
+    const SESSION_VOL_KEY = 'sheila_david_music_volume';
+
+    const audioEl = new Audio('assets/cancion-aniversario.mp3');
+    audioEl.loop = true;
+
+    let isMuted = sessionStorage.getItem(SESSION_MUTE_KEY) === 'true';
+    let volumePct = Number(sessionStorage.getItem(SESSION_VOL_KEY) ?? 65);
+    if (Number.isNaN(volumePct) || volumePct < 0 || volumePct > 100) volumePct = 65;
+
+    let isPlayingState = false;
+    let ambientCtx = null;
+    let ambientGain = null;
+    let usingAmbientFallback = false;
+
+    const btnPlayPause = document.getElementById('btn-music-play-pause');
+    const iconPlayPause = document.getElementById('icon-music-play-pause');
+    const labelPlayPause = document.getElementById('label-music-play-pause');
+    const btnMute = document.getElementById('btn-music-mute');
+    const svgSpeakerOn = document.getElementById('svg-speaker-on');
+    const svgSpeakerOff = document.getElementById('svg-speaker-off');
+    const volumeSlider = document.getElementById('music-volume-slider');
+    const statusText = document.getElementById('music-status-text');
+    const statusDot = document.getElementById('music-status-dot');
+
+    function syncAudioSettings() {
+      audioEl.volume = volumePct / 100;
+      audioEl.muted = isMuted;
+      if (ambientGain && ambientCtx) {
+        ambientGain.gain.setTargetAtTime(isMuted ? 0 : (volumePct / 100) * 0.04, ambientCtx.currentTime, 0.08);
+      }
+      try {
+        sessionStorage.setItem(SESSION_MUTE_KEY, String(isMuted));
+        sessionStorage.setItem(SESSION_VOL_KEY, String(volumePct));
+      } catch (e) {}
+    }
+
+    function updateMusicIndicators() {
+      btnMute.setAttribute('aria-pressed', String(isMuted));
+      svgSpeakerOn.classList.toggle('hidden', isMuted);
+      svgSpeakerOff.classList.toggle('hidden', !isMuted);
+
+      if (isPlayingState) {
+        iconPlayPause.textContent = '❚❚';
+        labelPlayPause.textContent = 'Pausar';
+        statusDot.classList.remove('bg-rosa-apagado/60');
+        statusDot.classList.add('bg-rosa-rubor');
+        statusText.textContent = isMuted
+          ? 'Sonando (silenciado)'
+          : usingAmbientFallback
+            ? 'Reproduciendo tono suave (vista previa)'
+            : 'Reproduciendo en bucle';
+      } else {
+        iconPlayPause.textContent = '▶';
+        labelPlayPause.textContent = 'Reproducir';
+        statusDot.classList.remove('bg-rosa-rubor');
+        statusDot.classList.add('bg-rosa-apagado/60');
+        statusText.textContent = 'En pausa';
+      }
+    }
+
+    function startAmbientFallback() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!ambientCtx) {
+          ambientCtx = new AudioCtx();
+          ambientGain = ambientCtx.createGain();
+          ambientGain.gain.value = isMuted ? 0 : (volumePct / 100) * 0.04;
+          ambientGain.connect(ambientCtx.destination);
+
+          // Acorde cálido suave de fondo para entorno de vista previa sin archivo MP3
+          [261.63, 329.63, 392.0].forEach((freq) => {
+            const osc = ambientCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            osc.connect(ambientGain);
+            osc.start();
+          });
+        } else if (ambientCtx.state === 'suspended') {
+          ambientCtx.resume();
+        }
+        usingAmbientFallback = true;
+        isPlayingState = true;
+        updateMusicIndicators();
+      } catch (e) {
+        isPlayingState = false;
+        updateMusicIndicators();
+      }
+    }
+
+    function stopAmbientFallback() {
+      if (ambientCtx && ambientCtx.state === 'running') {
+        ambientCtx.suspend();
+      }
+      isPlayingState = false;
+      updateMusicIndicators();
+    }
+
+    function playMusic() {
+      syncAudioSettings();
+      audioEl.play().then(() => {
+        usingAmbientFallback = false;
+        isPlayingState = true;
+        updateMusicIndicators();
+      }).catch(() => {
+        startAmbientFallback();
+      });
+    }
+
+    function pauseMusic() {
+      audioEl.pause();
+      if (usingAmbientFallback) {
+        stopAmbientFallback();
+      } else {
+        isPlayingState = false;
+        updateMusicIndicators();
+      }
+    }
+
+    btnPlayPause.addEventListener('click', () => {
+      if (isPlayingState) pauseMusic();
+      else playMusic();
+    });
+
+    btnMute.addEventListener('click', () => {
+      isMuted = !isMuted;
+      syncAudioSettings();
+      updateMusicIndicators();
+    });
+
+    volumeSlider.value = String(volumePct);
+    volumeSlider.addEventListener('input', (e) => {
+      volumePct = Number(e.target.value);
+      if (volumePct > 0 && isMuted) {
+        isMuted = false;
+      }
+      syncAudioSettings();
+      updateMusicIndicators();
+    });
+
+    // Pantalla de entrada: «Tengo algo para ti»
+    const entryScreen = document.getElementById('entry-screen');
+    document.getElementById('btn-entrar-experiencia').addEventListener('click', () => {
+      entryScreen.classList.add('is-leaving');
+      playMusic();
+    });
+
+    /* ---------------------------------------------------------
+       10. LIGHTBOX AMPLIABLE
+       --------------------------------------------------------- */
+    const lightboxModal = document.getElementById('lightbox-modal');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+
+    function openLightbox(key) {
+      const entry = IMAGE_REGISTRY[key];
+      if (!entry) return;
+      lightboxImg.src = entry.src;
+      lightboxImg.alt = entry.caption || '';
+      lightboxCaption.textContent = entry.caption || '';
+      lightboxModal.classList.remove('hidden');
+      lightboxModal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      lightboxModal.classList.add('hidden');
+      lightboxModal.classList.remove('flex');
+      lightboxImg.src = '';
+      document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('[data-lightbox-key]').forEach((el) => {
+      el.addEventListener('click', () => {
+        openLightbox(el.getAttribute('data-lightbox-key'));
+      });
+    });
+
+    document.getElementById('btn-close-lightbox').addEventListener('click', closeLightbox);
+    lightboxModal.addEventListener('click', (e) => {
+      if (e.target === lightboxModal) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !lightboxModal.classList.contains('hidden')) {
+        closeLightbox();
+      }
+    });
+
+    /* ---------------------------------------------------------
+       11. INICIALIZACIÓN
+       --------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      hydrateImages();
+      buildNavigationMenus();
+      renderCartasBiblioteca();
+      renderMensajeParaHoy();
+      updateContadorReal();
+      setInterval(updateContadorReal, 1000);
+      renderPlanes();
+      syncAudioSettings();
+      updateMusicIndicators();
+
+      const initialHash = window.location.hash.replace('#', '');
+      const isValidHash = SCREENS_META.some((s) => s.id === initialHash);
+      applyScreenVisibility(isValidHash ? initialHash : 'inicio');
+    });
+  </script>
+</body>
+</html>
