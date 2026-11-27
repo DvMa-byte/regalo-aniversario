@@ -1,0 +1,21 @@
+{
+  "name": "Nuestro momento",
+  "short_name": "Nuestro momento",
+  "start_url": "/regalo-aniversario/regalo_aniversario.html",
+  "scope": "/regalo-aniversario/",
+  "display": "standalone",
+  "background_color": "#f7f1e8",
+  "theme_color": "#5c1d2e",
+  "icons": [
+    {
+      "src": "/regalo-aniversario/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/regalo-aniversario/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

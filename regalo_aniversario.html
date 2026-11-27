@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#361017" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Nuestro momento" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="icon" type="image/x-icon" href="assets/TeAmo.ico" />
   <title>Para Sheila, con cariño. De David</title>
 
   <!-- Tipografías editoriales y de lectura -->
@@ -1012,21 +1018,37 @@
   <aside
     id="music-player-bar"
     aria-label="Reproductor de música de aniversario"
-    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-auto max-w-[94vw] rounded-full border border-rosa-apagado/35 bg-burdeos-oscuro/95 text-crema-claro px-3.5 py-2 shadow-editorial backdrop-blur-md"
+    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-xl rounded-full border border-rosa-apagado/35 bg-burdeos-oscuro/95 text-crema-claro px-3.5 py-2 shadow-editorial backdrop-blur-md"
   >
-    <div class="flex items-center justify-center gap-2 sm:gap-3">
+    <div class="flex items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span
+          id="music-status-dot"
+          class="h-2.5 w-2.5 shrink-0 rounded-full bg-rosa-apagado/60 transition-colors"
+          aria-hidden="true"
+        ></span>
+        <div class="truncate">
+          <p class="text-xs font-medium text-crema-claro truncate">
+            assets/cancion-aniversario.mp3
+          </p>
+          <p id="music-status-text" class="text-[11px] text-rosa-rubor/85 truncate">
+            Listo para reproducir
+          </p>
+        </div>
+      </div>
+
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <button
           id="btn-music-play-pause"
           type="button"
           aria-label="Reproducir o pausar música"
-          class="inline-flex items-center gap-1.5 rounded-full bg-crema-claro/15 hover:bg-crema-claro/25 text-crema-claro px-3.5 py-1.5 text-xs font-medium transition cursor-pointer"
+          class="inline-flex items-center gap-1.5 rounded-full bg-crema-claro/15 hover:bg-crema-claro/25 text-crema-claro px-3 py-1.5 text-xs font-medium transition cursor-pointer"
         >
           <span id="icon-music-play-pause" aria-hidden="true">▶</span>
-          <span id="label-music-play-pause">Pausar</span>
+          <span id="label-music-play-pause" class="hidden sm:inline">Reproducir</span>
         </button>
 
-        <label class="flex items-center gap-1.5 px-1" title="Volumen">
+        <label class="hidden md:flex items-center gap-1.5 px-1" title="Volumen">
           <span class="sr-only">Volumen</span>
           <input
             id="music-volume-slider"
@@ -1034,7 +1056,7 @@
             min="0"
             max="100"
             value="65"
-            class="volumen-slider w-20 sm:w-24"
+            class="volumen-slider w-20"
           />
         </label>
 
@@ -1882,6 +1904,8 @@
     const svgSpeakerOn = document.getElementById('svg-speaker-on');
     const svgSpeakerOff = document.getElementById('svg-speaker-off');
     const volumeSlider = document.getElementById('music-volume-slider');
+    const statusText = document.getElementById('music-status-text');
+    const statusDot = document.getElementById('music-status-dot');
 
     function syncAudioSettings() {
       audioEl.volume = volumePct / 100;
@@ -1903,9 +1927,19 @@
       if (isPlayingState) {
         iconPlayPause.textContent = '❚❚';
         labelPlayPause.textContent = 'Pausar';
+        statusDot.classList.remove('bg-rosa-apagado/60');
+        statusDot.classList.add('bg-rosa-rubor');
+        statusText.textContent = isMuted
+          ? 'Sonando (silenciado)'
+          : usingAmbientFallback
+            ? 'Reproduciendo tono suave (vista previa)'
+            : 'Reproduciendo en bucle';
       } else {
         iconPlayPause.textContent = '▶';
         labelPlayPause.textContent = 'Reproducir';
+        statusDot.classList.remove('bg-rosa-rubor');
+        statusDot.classList.add('bg-rosa-apagado/60');
+        statusText.textContent = 'En pausa';
       }
     }
 
@@ -2038,7 +2072,7 @@
     });
 
     /* ---------------------------------------------------------
-       11. INICIALIZACIÓN
+       11. INICIALIZACIÓN Y SERVICE WORKER
        --------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', () => {
       hydrateImages();
@@ -2054,10 +2088,13 @@
       const initialHash = window.location.hash.replace('#', '');
       const isValidHash = SCREENS_META.some((s) => s.id === initialHash);
       applyScreenVisibility(isValidHash ? initialHash : 'inicio');
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+          .register('sw.js')
+          .catch((err) => console.error('Error al registrar SW:', err));
+      }
     });
-  </script>
-</body>
-</html>
   </script>
 </body>
 </html>
